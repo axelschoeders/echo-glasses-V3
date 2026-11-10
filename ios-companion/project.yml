@@ -1,0 +1,66 @@
+# XcodeGen spec. On a Mac:  brew install xcodegen && xcodegen generate
+# Then open EchoGlasses.xcodeproj. See README-XCODE.md.
+name: EchoGlasses
+options:
+  bundleIdPrefix: com.example          # CHANGE to your own, e.g. nl.jouwnaam
+  deploymentTarget:
+    iOS: "17.0"                        # raise if Meta's SDK requires a newer iOS
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""               # your Apple Team ID (also used by MWDAT/TeamID)
+    MARKETING_VERSION: "0.7.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  MetaWearables:
+    url: https://github.com/facebook/meta-wearables-dat-ios
+    from: "1.0.0"                      # the SDK is only published as version tags (main has no Package.swift)
+targets:
+  EchoGlasses:
+    type: application
+    platform: iOS
+    sources:
+      - EchoGlasses
+    dependencies:
+      - package: MetaWearables
+        product: MWDATCore
+      - package: MetaWearables
+        product: MWDATCamera
+      - package: MetaWearables
+        product: MWDATMockDevice
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.echoglasses   # CHANGE (must match your Meta registration)
+        TARGETED_DEVICE_FAMILY: "1"
+    entitlements:
+      path: EchoGlasses/EchoGlasses.entitlements
+      properties:
+        # Needed for camera streaming over the glasses' Wi-Fi (per Meta docs).
+        com.apple.developer.networking.HotspotConfiguration: true
+    info:
+      path: EchoGlasses/Info.plist
+      properties:
+        CFBundleDisplayName: ECHO Glasses
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # --- Meta Wearables Device Access Toolkit (Developer Mode values) ---
+        MWDAT:
+          AppLinkURLScheme: "echoglasses://"
+          MetaAppID: "0"                # only needed outside Developer Mode
+          ClientToken: ""              # only needed outside Developer Mode
+          TeamID: $(DEVELOPMENT_TEAM)
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
+            CFBundleURLSchemes: [echoglasses]
+        UIBackgroundModes: [bluetooth-central, external-accessory, audio]
+        UISupportedExternalAccessoryProtocols: [com.meta.ar.wearable]
+        NSBluetoothAlwaysUsageDescription: Nodig om verbinding te maken met je Meta-bril.
+        NSLocalNetworkUsageDescription: Nodig voor de camera van je bril (Wi-Fi) en voor je ECHO Bridge op het thuisnetwerk.
+        NSBonjourServices: [_bonjour._tcp]
+        NSCameraUsageDescription: Alleen nodig voor de MockDeviceKit-simulatie met de iPhone-camera.
+        NSMicrophoneUsageDescription: ECHO luistert naar je stem (via de iPhone of de bril).
+        NSSpeechRecognitionUsageDescription: Om je gesproken opdrachten om te zetten naar tekst.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true   # lets the app reach your http:// ECHO Bridge on the LAN
